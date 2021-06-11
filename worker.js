@@ -29,7 +29,7 @@ async function handlePOST (request) {
 	if (!redirectURL || !path)
 		return new Response('"url" and "path" must be set', { status: 400 });
 
-	// validate redirectURL is a URL
+	// Validate redirectURL
 	try {
 		new URL(redirectURL);
 	} catch (e) {
@@ -38,7 +38,7 @@ async function handlePOST (request) {
 		else throw e;
 	};
 
-	// will overwrite current path if it exists
+	// Overwrite current path if it exists
 	await LINKS.put(path, redirectURL);
 	return new Response(`"${redirectURL}" is now available at "${shortener}${path}"`, { status: 201 });
 }
@@ -91,5 +91,5 @@ async function handleRequest (request) {
 
 	if (redirectURL) return Response.redirect(redirectURL, 302);
 
-	return new Response('URL not found. Sad!', { status: 404 });
+	return new Response('Not found', { status: 404 });
 }
