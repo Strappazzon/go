@@ -40,7 +40,7 @@ async function handlePOST (request) {
 
 	// Overwrite current path if it exists
 	await LINKS.put(path, redirectURL);
-	return new Response(`"${redirectURL}" is now available at "${shortener}${path}"`, { status: 201 });
+	return new Response(`${shortener}${path}`, { status: 201 });
 }
 
 /**
