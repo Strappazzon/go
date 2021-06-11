@@ -11,25 +11,15 @@ addEventListener('fetch', event => {
 	}
 });
 
-const html = `<!DOCTYPE html>
-<body>
-    <pre>
-    use an actual path if you're trying to fetch something.
-    send a POST request with form data "url" and "path" if you're trying to put something.
-    set x-preshared-key header for authentication.
-    
-    source: <a href="https://github.com/VandyHacks/vhl.ink">VandyHacks/vhl.ink</a>
-    </pre>
-</body>`;
-
 /**
  * Respond to POST requests with shortened URL creation
  * @param {Request} request
  */
-async function handlePOST(request) {
-	const psk = request.headers.get('x-preshared-key');
-	if (psk !== SECRET_KEY)
-		return new Response('Sorry, bad key.', { status: 403 });
+async function handlePOST (request) {
+	const sk = request.headers.get('x-auth-key');
+
+	if (sk !== SECRET_KEY)
+		return new Response('Bad key', { status: 403 });
 
 	const shortener = new URL(request.url);
 	const data = await request.formData();
@@ -37,38 +27,38 @@ async function handlePOST(request) {
 	const path = data.get('path');
 
 	if (!redirectURL || !path)
-		return new Response('`url` and `path` need to be set.', { status: 400 });
+		return new Response('"url" and "path" must be set', { status: 400 });
 
 	// validate redirectURL is a URL
 	try {
 		new URL(redirectURL);
 	} catch (e) {
-		if (e instanceof TypeError) 
-			return new Response('`url` needs to be a valid http url.', { status: 400 });
+		if (e instanceof TypeError)
+			return new Response('"url" must be a valid HTTP URL', { status: 400 });
 		else throw e;
 	};
 
 	// will overwrite current path if it exists
 	await LINKS.put(path, redirectURL);
-	return new Response(`${redirectURL} available at ${shortener}${path}`, {
-		status: 201,
-	});
+	return new Response(`"${redirectURL}" is now available at "${shortener}${path}"`, { status: 201 });
 }
 
 /**
  * Respond to DELETE requests by deleting the shortlink
  * @param {Request} request
  */
-async function handleDELETE(request) {
-	const psk = request.headers.get('x-preshared-key');
-	if (psk !== SECRET_KEY)
-		return new Response('Sorry, bad key.', { status: 403 });
+async function handleDELETE (request) {
+	const sk = request.headers.get('x-auth-key');
+
+	if (sk !== SECRET_KEY)
+		return new Response('Bad key', { status: 403 });
 
 	const url = new URL(request.url);
-	const path = url.pathname.split('/')[1];
+	const path = url.pathname.split('/')[ 1 ];
+
 	if (!path) return new Response('Not found', { status: 404 });
 	await LINKS.delete(path);
-	return new Response(`${request.url} deleted!`, { status: 200 });
+	return new Response(`"${request.url}" successfully deleted`, { status: 200 });
 }
 
 /**
@@ -78,40 +68,27 @@ async function handleDELETE(request) {
  * shortlinks registered with the service.
  * @param {Request} request
  */
-async function handleRequest(request) {
+async function handleRequest (request) {
 	const url = new URL(request.url);
-	const path = url.pathname.split('/')[1];
+	const path = url.pathname.split('/')[ 1 ];
+
+	// Return list of available shortlinks if user supplies admin credentials.
 	if (!path) {
-		// Return list of available shortlinks if user supplies admin credentials.
-		const psk = request.headers.get('x-preshared-key');
-		if (psk === SECRET_KEY) {
+		const sk = request.headers.get('x-auth-key');
+
+		if (sk === SECRET_KEY) {
 			const { keys } = await LINKS.list();
 			let paths = "";
 			keys.forEach(element => paths += `${element.name}\n`);
-			
+
 			return new Response(paths, { status: 200 });
 		}
 
-		return new Response(html, {
-			headers: {
-				'content-type': 'text/html;charset=UTF-8',
-			},
-		});
+		return Response.redirect('https://www.strappazzon.xyz', 302);
 	}
-	if (path === 'quack') {
-		const resObject = {
-			text: 'You just got ducked 🦆',
-			response_type: 'in_channel',
-		};
-	
-		// Just hope it works lol
-		await fetch(SLACK_WEBHOOK_QUACK, {
-			method: 'POST',
-			body: JSON.stringify(resObject),
-			headers: { 'Content-Type': 'application/json' },
-		});
-	}
+
 	const redirectURL = await LINKS.get(path);
+
 	if (redirectURL) return Response.redirect(redirectURL, 302);
 
 	return new Response('URL not found. Sad!', { status: 404 });
