@@ -15,7 +15,7 @@ addEventListener('fetch', event => {
  * Respond to POST requests with shortened URL creation
  * @param {Request} request
  */
-async function handlePOST (request) {
+async function handlePOST(request) {
 	const sk = request.headers.get('x-auth-key');
 
 	if (sk !== SECRET_KEY)
@@ -47,7 +47,7 @@ async function handlePOST (request) {
  * Respond to DELETE requests by deleting the shortlink
  * @param {Request} request
  */
-async function handleDELETE (request) {
+async function handleDELETE(request) {
 	const sk = request.headers.get('x-auth-key');
 
 	if (sk !== SECRET_KEY)
@@ -68,7 +68,7 @@ async function handleDELETE (request) {
  * shortlinks registered with the service.
  * @param {Request} request
  */
-async function handleRequest (request) {
+async function handleRequest(request) {
 	const url = new URL(request.url);
 	const path = url.pathname.split('/')[ 1 ];
 
